@@ -1,0 +1,61 @@
+name: Network Firewall GitOps Pipeline
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'chapter12/infrastructure/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'chapter12/infrastructure/**'
+
+env:
+  TF_VERSION: 1.6.0
+  AWS_REGION: us-west-2
+
+jobs:
+  terraform:
+    name: 'Terraform'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_IAM_ROLE }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ env.TF_VERSION }}
+
+    - name: Terraform Init
+      working-directory: ./chapter12/infrastructure
+      run: terraform init -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}"
+
+    - name: Terraform Format
+      working-directory: ./chapter12/infrastructure
+      run: terraform fmt -check
+
+    - name: Terraform Validate
+      working-directory: ./chapter12/infrastructure
+      run: terraform validate
+
+    - name: Terraform Plan
+      working-directory: ./chapter12/infrastructure
+      run: terraform plan -no-color
+      if: github.event_name == 'pull_request'
+
+    - name: Terraform Apply
+      working-directory: ./chapter12/infrastructure
+      run: terraform apply -auto-approve
+      if: github.event_name == 'push'
+

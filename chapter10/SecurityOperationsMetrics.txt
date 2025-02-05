@@ -1,0 +1,21 @@
+aws cloudwatch put-dashboard \
+    --dashboard-name SecurityOperationsMetrics \
+    --dashboard-body '{
+        "widgets": [
+            {
+                "type": "metric",
+                "properties": {
+                    "metrics": [
+                        ["SecurityMetrics", "MTTD", "Environment", "Production"],
+                        ["SecurityMetrics", "MTTR", "Environment", "Production"]
+                    ],
+                    "period": 300,
+                    "stat": "Average",
+                    "region": "us-west-2",
+                    "title": "Response Metrics"
+                }
+            }
+        ]
+    }'
+
+
