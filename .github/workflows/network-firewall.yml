@@ -29,7 +29,7 @@ jobs:
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
-        role-to-assume: arn:aws:iam::387974667323:role/GitHubActionsRole
+        role-to-assume: arn:aws:iam::387974667323:role/GitHubActionsRoleAllRepos
         role-session-name: samplerolesession
         aws-region: us-west-2
 
@@ -47,7 +47,7 @@ jobs:
       if: github.event_name == 'pull_request'
       run: |
         terraform import aws_networkfirewall_firewall.main \
-        arn:aws:network-firewall:us-west-2:387974667323:firewall/your-firewall-name
+        arn:aws:network-firewall:us-west-2:387974667323:firewall/SecureInfraFirewall
 
     - name: Terraform Format
       working-directory: ./chapter12/infrastructure
