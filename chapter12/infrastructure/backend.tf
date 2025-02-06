@@ -7,7 +7,7 @@ terraform {
     region         = "us-west-2" # locals.s3_bucket_name
     encrypt        = true
     dynamodb_table = "terraform_state_lock"
-    bucket = "terraformstatebucketsecuringtheawscloud"
+    bucket = "arn:aws:s3:::terraformstatebucketsecuringtheawscloud"
     key = "123"
   }
 }
