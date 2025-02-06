@@ -1,5 +1,5 @@
 resource "aws_networkfirewall_firewall" "main" {
-  name                = "network-firewall-${var.environment}"
+  name                = "SecureInfraFirewall"
   firewall_policy_arn = "arn:aws:network-firewall:us-west-2:387974667323:firewall-policy/AllowAllTrafficPolicy"
   vpc_id              = data.aws_vpc.main.id
 
