@@ -8,6 +8,6 @@ terraform {
     encrypt        = true
     dynamodb_table = "terraform_state_lock"
     bucket = "terraformstatebucketsecuringtheawscloud"
-    key = ""
+    key = "123"
   }
 }
