@@ -15,7 +15,7 @@ env:
   AWS_REGION: us-west-2
 
 jobs:
-  get_caller)identity:
+  get_caller_identity:
     terraform:
       name: 'Terraform'
       runs-on: ubuntu-latest
