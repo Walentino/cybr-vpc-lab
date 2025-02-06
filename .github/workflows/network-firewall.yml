@@ -29,8 +29,9 @@ jobs:
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
-        role-to-assume: ${{ secrets.AWS_IAM_ROLE }}
-        aws-region: ${{ env.AWS_REGION }}
+        role-to-assume: arn:aws:iam::387974667323:role/GitHubActionsRole
+        role-session-name: samplerolesession
+        aws-region: us-west-2
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
