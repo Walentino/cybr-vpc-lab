@@ -13,10 +13,10 @@ resource "aws_networkfirewall_rule_group" "allow_basic_traffic" {
         header {
           destination      = "ANY"
           destination_port = "ANY"
-          protocol        = "TCP"
-          direction       = "ANY"
-          source_port     = "ANY"
-          source         = "ANY"
+          protocol         = "TCP"
+          direction        = "ANY"
+          source_port      = "ANY"
+          source           = "ANY"
         }
         rule_option { keyword = "sid:1" }
       }
@@ -26,10 +26,10 @@ resource "aws_networkfirewall_rule_group" "allow_basic_traffic" {
         header {
           destination      = "ANY"
           destination_port = "ANY"
-          protocol        = "UDP"
-          direction       = "ANY"
-          source_port     = "ANY"
-          source         = "ANY"
+          protocol         = "UDP"
+          direction        = "ANY"
+          source_port      = "ANY"
+          source           = "ANY"
         }
         rule_option { keyword = "sid:2" }
       }
@@ -39,10 +39,10 @@ resource "aws_networkfirewall_rule_group" "allow_basic_traffic" {
         header {
           destination      = "ANY"
           destination_port = "ANY"
-          protocol        = "ICMP"
-          direction       = "ANY"
-          source_port     = "ANY"
-          source         = "ANY"
+          protocol         = "ICMP"
+          direction        = "ANY"
+          source_port      = "ANY"
+          source           = "ANY"
         }
         rule_option { keyword = "sid:3" }
       }
