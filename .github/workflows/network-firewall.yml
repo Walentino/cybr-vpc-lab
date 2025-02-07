@@ -50,6 +50,12 @@ jobs:
       working-directory: ./chapter12/infrastructure
       run: terraform validate
 
+    - name: Run Checkov
+      uses: bridgecrewio/checkov-action@master
+      with:
+        directory: ./chapter12/infrastructure
+        framework: terraform
+
     - name: Terraform Plan
       working-directory: ./chapter12/infrastructure
       run: terraform plan -no-color
