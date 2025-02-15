@@ -1,4 +1,3 @@
-```markdown
 # AWS CLI Commands Used in Chapter 5
 
 ## 1. Create a VPC
@@ -353,5 +352,4 @@ graph TD;
   H[InfraTestSG] --> B
   I[PrivateInstanceSG] --> C
   J[Network ACL] --> B
-```
 ```
