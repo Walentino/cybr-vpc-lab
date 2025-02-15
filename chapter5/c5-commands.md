@@ -1,3 +1,4 @@
+```markdown
 # AWS CLI Commands Used in Chapter 5
 
 ## 1. Create a VPC
@@ -323,6 +324,32 @@ curl http://checkip.amazonaws.com
 
 ---
 
+# AWS Network Firewall Commands
+
+## 37. Create a Firewall Policy
+```sh
+aws network-firewall create-firewall-policy \
+    --firewall-policy-name AllowAllTrafficPolicy \
+    --firewall-policy '{ "StatelessRuleGroupReferences": [], "StatefulRuleGroupReferences": [], "StatelessDefaultActions": ["aws:pass"], "StatelessFragmentDefaultActions": ["aws:pass"] }' \
+    --region us-west-2
+```
+> **Note:** This creates a basic firewall policy that passes all traffic.
+
+## 38. Create a Firewall
+```sh
+aws network-firewall create-firewall \
+    --firewall-name SecureInfraFirewall \
+    --firewall-policy-arn arn:aws:network-firewall:us-west-2:<your-account>:firewall-policy/AllowAllTrafficPolicy \
+    --vpc-id <your-vpc-id> \
+    --subnet-mappings SubnetId=<your-public-subnet-id> \
+    --region us-west-2
+```
+> **Replace:** `<your-account>`, `<your-vpc-id>`, and `<your-public-subnet-id>`
+
+> **Note:** Update your VPC route tables as needed to direct traffic through the firewall.
+
+---
+
 # Resources Created in This Chapter
 
 - **VPC:** `vpc-xxxxxxxx`
@@ -335,6 +362,7 @@ curl http://checkip.amazonaws.com
 - **Elastic IP:** `eipalloc-xxxxxxxx`
 - **Security Groups:** `sg-xxxxxxxx` (InfraTestSG, PrivateInstanceSG)
 - **Network ACL:** `acl-xxxxxxxx`
+- **Firewall Policy & Firewall:** See commands 37 & 38
 
 ---
 
@@ -352,4 +380,6 @@ graph TD;
   H[InfraTestSG] --> B
   I[PrivateInstanceSG] --> C
   J[Network ACL] --> B
+  K[SecureInfraFirewall] --- B
+```
 ```
