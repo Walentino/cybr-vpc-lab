@@ -1,0 +1,216 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Load Testing Setup with Target and Test Instances'
+
+Resources:
+  # VPC and related resources
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: LoadTesting-VPC
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: LoadTesting-IGW
+
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: LoadTesting-PublicSubnet
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: LoadTesting-PublicRouteTable
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  SubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      RouteTableId: !Ref PublicRouteTable
+
+  # Security Group for Load Testing Instance
+  LoadTestSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for load testing instance
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          Description: Allow HTTPS from anywhere
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: Allow HTTP from anywhere
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+          Description: Allow SSH for management
+
+  # Security Group for Target Instance
+  TargetSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for target instance
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: Allow HTTP from anywhere
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          Description: Allow HTTPS from anywhere
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+          Description: Allow SSH for management
+
+  # IAM Role for SSM and CloudWatch
+  SSMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+      Path: /
+
+  SSMInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+        - !Ref SSMRole
+
+  # Target EC2 Instance
+  TargetInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-04907d7291cd8e06a
+      InstanceType: t2.micro
+      NetworkInterfaces:
+        - DeviceIndex: 0
+          AssociatePublicIpAddress: true
+          SubnetId: !Ref PublicSubnet
+          GroupSet: 
+            - !Ref TargetSecurityGroup
+          DeleteOnTermination: true
+      IamInstanceProfile: !Ref SSMInstanceProfile
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          amazon-linux-extras install -y nginx1
+          systemctl enable nginx
+          systemctl start nginx
+          yum install -y amazon-cloudwatch-agent
+          systemctl enable amazon-cloudwatch-agent
+          systemctl start amazon-cloudwatch-agent
+      Tags:
+        - Key: Name
+          Value: Target-Instance
+
+  # Load Testing EC2 Instance
+  LoadTestInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-04907d7291cd8e06a
+      InstanceType: t2.micro
+      NetworkInterfaces:
+        - DeviceIndex: 0
+          AssociatePublicIpAddress: true
+          SubnetId: !Ref PublicSubnet
+          GroupSet: 
+            - !Ref LoadTestSecurityGroup
+          DeleteOnTermination: true
+      IamInstanceProfile: !Ref SSMInstanceProfile
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          yum install -y java-11-amazon-corretto unzip
+          cd /home/ec2-user
+          wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.zip
+          unzip apache-jmeter-5.6.3.zip
+          chown -R ec2-user:ec2-user apache-jmeter-5.6.3
+          echo 'export JVM_ARGS="-Xms256m -Xmx512m -XX:MaxMetaspaceSize=128m"' >> /home/ec2-user/.bashrc
+      Tags:
+        - Key: Name
+          Value: LoadTest-Instance
+
+Outputs:
+  TargetInstanceId:
+    Description: ID of the target EC2 instance
+    Value: !Ref TargetInstance
+  
+  TargetInstancePrivateIP:
+    Description: Private IP address of the target instance
+    Value: !GetAtt TargetInstance.PrivateIp
+  
+  TargetInstancePublicIP:
+    Description: Public IP address of the target instance
+    Value: !GetAtt TargetInstance.PublicIp
+  
+  LoadTestInstanceId:
+    Description: ID of the load testing instance
+    Value: !Ref LoadTestInstance
+  
+  LoadTestInstancePrivateIP:
+    Description: Private IP address of the load testing instance
+    Value: !GetAtt LoadTestInstance.PrivateIp
+  
+  LoadTestInstancePublicIP:
+    Description: Public IP address of the load testing instance
+    Value: !GetAtt LoadTestInstance.PublicIp
+  
+  LoadTestSecurityGroupId:
+    Description: ID of the Load Testing security group
+    Value: !Ref LoadTestSecurityGroup
+
+  TargetSecurityGroupId:
+    Description: ID of the Target security group
+    Value: !Ref TargetSecurityGroup
