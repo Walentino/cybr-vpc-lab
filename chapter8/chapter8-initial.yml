@@ -1,6 +1,12 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Load Testing Setup with Target and Test Instances'
 
+Parameters:
+  LatestAmiId:
+    Description: Latest Amazon Linux 2 AMI ID in the current region
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
+
 Resources:
   # VPC and related resources
   VPC:
@@ -130,7 +136,7 @@ Resources:
   TargetInstance:
     Type: AWS::EC2::Instance
     Properties:
-      ImageId: ami-04907d7291cd8e06a
+      ImageId: !Ref LatestAmiId
       InstanceType: t2.micro
       NetworkInterfaces:
         - DeviceIndex: 0
@@ -158,7 +164,7 @@ Resources:
   LoadTestInstance:
     Type: AWS::EC2::Instance
     Properties:
-      ImageId: ami-04907d7291cd8e06a
+      ImageId: !Ref LatestAmiId
       InstanceType: t2.micro
       NetworkInterfaces:
         - DeviceIndex: 0
