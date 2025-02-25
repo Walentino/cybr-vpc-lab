@@ -2,10 +2,10 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Environment for testing AWS resilience strategies'
 
 Parameters:
-  AvailabilityZone:
-    Type: AWS::EC2::AvailabilityZone::Name
-    Description: The AZ where you want to deploy resources
-    Default: us-west-2a
+  LatestAMI:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: The latest Amazon Linux 2 AMI ID
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
 
 Resources:
   # VPC and Network Configuration
@@ -36,9 +36,9 @@ Resources:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
-      AvailabilityZone: !Ref AvailabilityZone
       CidrBlock: 10.0.1.0/24
       MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select [ 0, !GetAZs "" ]
       Tags:
         - Key: Name
           Value: Public-Subnet
@@ -81,7 +81,7 @@ Resources:
           ToPort: 443
           CidrIp: 0.0.0.0/0
 
-  # IAM Role for SSM
+  # IAM Role for SSM and CloudWatch Agent Permissions
   SSMInstanceRole:
     Type: AWS::IAM::Role
     Properties:
@@ -103,66 +103,25 @@ Resources:
       Roles:
         - !Ref SSMInstanceRole
 
-  # EC2 Instances
+  # EC2 Instance for the Web Server
   WebServer:
     Type: AWS::EC2::Instance
     Properties:
-      ImageId: ami-04907d7291cd8e06a
+      ImageId: !Ref LatestAMI
       InstanceType: t2.micro
       SubnetId: !Ref PublicSubnet
-      SecurityGroupIds: 
+      SecurityGroupIds:
         - !Ref WebServerSecurityGroup
       IamInstanceProfile: !Ref SSMInstanceProfile
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
-          yum update -y
-          amazon-linux-extras install -y nginx1
-          systemctl enable nginx
-          systemctl start nginx
-          yum install -y amazon-cloudwatch-agent
-          systemctl enable amazon-cloudwatch-agent
-          systemctl start amazon-cloudwatch-agent
+          yum update -y && amazon-linux-extras enable nginx1 && yum install -y nginx && systemctl enable nginx && systemctl start nginx && yum install -y amazon-cloudwatch-agent && systemctl enable amazon-cloudwatch-agent && systemctl start amazon-cloudwatch-agent 
       Tags:
         - Key: Name
           Value: Web-Server
 
-  LoadTestInstance:
-    Type: AWS::EC2::Instance
-    Properties:
-      ImageId: ami-04907d7291cd8e06a
-      InstanceType: t2.micro
-      SubnetId: !Ref PublicSubnet
-      SecurityGroupIds: 
-        - !Ref WebServerSecurityGroup
-      IamInstanceProfile: !Ref SSMInstanceProfile
-      UserData:
-        Fn::Base64: !Sub |
-          #!/bin/bash
-          yum update -y
-          yum install -y java-11-amazon-corretto unzip
-          cd /home/ec2-user
-          wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.zip
-          unzip apache-jmeter-5.6.3.zip
-          chown -R ec2-user:ec2-user apache-jmeter-5.6.3
-          echo 'export JVM_ARGS="-Xms256m -Xmx512m -XX:MaxMetaspaceSize=128m"' >> /home/ec2-user/.bashrc
-      Tags:
-        - Key: Name
-          Value: Load-Test-Instance
-
 Outputs:
   WebServerPublicIP:
-    Description: Public IP of the web server
+    Description: Public IP of the web server instance.
     Value: !GetAtt WebServer.PublicIp
-
-  LoadTestInstancePublicIP:
-    Description: Public IP of the load test instance
-    Value: !GetAtt LoadTestInstance.PublicIp
-
-  WebServerPrivateIP:
-    Description: Private IP of the web server
-    Value: !GetAtt WebServer.PrivateIp
-
-  LoadTestInstancePrivateIP:
-    Description: Private IP of the load test instance
-    Value: !GetAtt LoadTestInstance.PrivateIp
