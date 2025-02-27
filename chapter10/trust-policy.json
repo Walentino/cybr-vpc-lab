@@ -1,12 +1,8 @@
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Service": "lambda.amazonaws.com"
-      },
-      "Action": "sts:AssumeRole"
-    }
-  ]
-}
+[
+  {
+    "Source": "aws.guardduty",
+    "DetailType": "GuardDuty Finding",
+    "Detail": "{\"severity\":8,\"resource\":{\"instanceDetails\":{\"instanceId\":\"i-0fc619051f5a5c0cf\"}},\"additionalInfo\":{\"description\":\"Simulated high severity security event for testing.\"}}"
+  }
+]
+
