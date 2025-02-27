@@ -1,0 +1,13 @@
+{
+  "detail": {
+    "severity": 8,
+    "resource": {
+      "instanceDetails": {
+        "instanceId": "insert-you-instance-id-here"
+      }
+    },
+    "additionalInfo": {
+      "description": "Simulated high severity security event for testing."
+    }
+  }
+}
