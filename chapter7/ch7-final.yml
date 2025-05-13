@@ -1,0 +1,107 @@
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Chapter 7 Initial Setup - Data Security and Cryptography
+  Sets up a KMS Key and basic IAM Roles (Admin and User) for data protection demonstrations.
+
+Resources:
+
+  PayrollKeyAdminRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: PayrollKeyAdmin
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+
+  PayrollKeyUserRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: PayrollKeyUser
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+
+  PayrollCMK:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: Key for processing payroll data
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: EnableRootAccess
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: "kms:*"
+            Resource: "*"
+          - Sid: AdminAccess
+            Effect: Allow
+            Principal:
+              AWS: !GetAtt PayrollKeyAdminRole.Arn
+            Action:
+              - "kms:Create*"
+              - "kms:Describe*"
+              - "kms:Enable*"
+              - "kms:List*"
+              - "kms:Put*"
+              - "kms:Update*"
+              - "kms:Revoke*"
+              - "kms:Disable*"
+              - "kms:Get*"
+              - "kms:Delete*"
+              - "kms:ScheduleKeyDeletion"
+              - "kms:CancelKeyDeletion"
+            Resource: "*"
+          - Sid: UseKey
+            Effect: Allow
+            Principal:
+              AWS: !GetAtt PayrollKeyUserRole.Arn
+            Action:
+              - "kms:Encrypt"
+              - "kms:Decrypt"
+              - "kms:ReEncrypt*"
+              - "kms:GenerateDataKey*"
+              - "kms:DescribeKey"
+            Resource: "*"
+
+
+  PayrollDataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "secure-customer-data-${AWS::AccountId}"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+              KMSMasterKeyID: !Ref PayrollCMK
+      Tags:
+        - Key: DataClassification
+          Value: Confidential
+        - Key: Department
+          Value: Finance
+
+  BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref PayrollDataBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: EnforceKMS
+            Effect: Deny
+            Principal: "*"
+            Action: "s3:PutObject"
+            Resource: !Sub "arn:aws:s3:::${PayrollDataBucket}/*"
+            Condition:
+              StringNotEquals:
+                "s3:x-amz-server-side-encryption": "aws:kms"
