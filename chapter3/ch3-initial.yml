@@ -1,0 +1,60 @@
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Chapter 3 - IAM Resources
+  Starts with foundational resources from Chapter 2 already in place.
+
+Resources:
+
+  IAMGroupAdmins:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: Admins
+
+  IAMGroupDevelopers:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: Developers
+
+  IAMUserAlice:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: alice
+      Groups:
+        - !Ref IAMGroupAdmins
+
+  IAMUserDan:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: dan
+      Groups:
+        - !Ref IAMGroupDevelopers
+
+  AdminPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: AdminPolicy
+      Groups:
+        - !Ref IAMGroupAdmins
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: "*"
+            Resource: "*"
+
+  DeveloperPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: DeveloperPolicy
+      Groups:
+        - !Ref IAMGroupDevelopers
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - "ec2:*"
+              - "codepipeline:*"
+              - "codecatalyst:*"
+            Resource: "*"
