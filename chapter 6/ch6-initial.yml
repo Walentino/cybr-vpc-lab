@@ -1,0 +1,15 @@
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Chapter 6 Initial Setup - Threat Detection in AWS
+  Assumes Security Hub and GuardDuty are not yet enabled.
+
+Resources:
+  GuardDutyDetector:
+    Type: AWS::GuardDuty::Detector
+    Properties:
+      Enable: true
+
+  SecurityHub:
+    Type: AWS::SecurityHub::Hub
+    Properties: {}
