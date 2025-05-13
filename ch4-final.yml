@@ -1,6 +1,0 @@
-AWSTemplateFormatVersion: '2010-09-09'
-Description: >
-  Chapter 4 - AWS Identity Center setup must be performed using the AWS Console.
-  This placeholder template serves only as a reference.
-
-Resources: {}
