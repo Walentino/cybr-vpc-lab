@@ -1,0 +1,13 @@
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Chapter 11 - Secure S3 Bucket with Encryption
+
+Resources:
+  MySecureBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: my-secure-bucket
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
