@@ -1,0 +1,19 @@
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Chapter 4 - Organizations Pre-setup
+  Prepares Organizational Units (OUs) for Identity Center setup.
+
+Resources:
+
+  OrgDevOU:
+    Type: AWS::Organizations::OrganizationalUnit
+    Properties:
+      Name: Dev Accounts
+      ParentId: !Ref RootIdPlaceholder  # Replace manually after root ID is known
+
+  OrgProdOU:
+    Type: AWS::Organizations::OrganizationalUnit
+    Properties:
+      Name: Production Accounts
+      ParentId: !Ref RootIdPlaceholder  # Replace manually after root ID is known
